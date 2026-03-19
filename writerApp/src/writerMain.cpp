@@ -209,6 +209,10 @@ int main (int argc, char *argv[]) {
 
     auto subscription = client
         .monitor(input_pv)
+        // Work around older pvxs monitor parser which expects record._options.pipeline.
+        .record("pipeline", false)
+        .record("queueSize", 8u)
+        .record("ackAny", 1u)
         .event([&event](pvxs::client::Subscription &) { event.signal(); })
         .maskDisconnected(false)
         .exec();

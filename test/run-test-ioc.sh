@@ -44,8 +44,8 @@ start_ioc_tmux() {
     session="${SESSION_PREFIX}-${session_suffix}"
 
     if tmux has-session -t "${session}" 2>/dev/null; then
-        echo "==> ${name}: restarting existing tmux session '${session}'"
-        tmux kill-session -t "${session}"
+        echo "==> ${name}: tmux session '${session}' already active, skipping"
+        return 0
     else
         echo "==> ${name}: starting tmux session '${session}'"
     fi

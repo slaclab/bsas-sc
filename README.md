@@ -100,6 +100,49 @@ make -j
 
 Build output is installed under architecture-specific subdirectories in `bin/` and `lib/`. Documentation is generated under `doc/`.
 
+### Running Test IOCs
+
+The helper script `test/run-test-ioc.sh` starts each test IOC in its own `tmux` session so processes stay alive after the launching shell exits.
+
+Start all test IOCs:
+
+```shell
+bash test/run-test-ioc.sh
+```
+
+List running IOC sessions:
+
+```shell
+tmux ls
+```
+
+Attach to one IOC console:
+
+```shell
+tmux attach -t ioc-simulator-table-stat
+```
+
+Detach without stopping the IOC: press `Ctrl+b`, then `d`.
+
+Protocol notes for reading PVs:
+
+1. PVA table PVs (published by PVXS) must be read with `pvget`, for example:
+
+```shell
+pvget SIM:STAT:0
+pvget SIM:STAT:1
+pvget SIM:TABLE:0
+```
+
+2. Classic CA records are read with `caget`, for example:
+
+```shell
+caget SIM:STAT_ASUB
+caget SIM:SCALAR:0
+```
+
+If `caget` times out for `SIM:STAT:0` / `SIM:STAT:1`, this is expected because those are PVA-only PVs.
+
 ### Machine-local overrides (optional)
 
 Use local override files to avoid editing tracked production files when switching machines.

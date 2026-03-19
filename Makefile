@@ -2,7 +2,10 @@
 TOP = .
 
 # Bootstrap targets must run before EPICS build configuration is loaded.
-ifneq ($(filter release-site-local RELEASE_SITE,$(MAKECMDGOALS)),)
+BOOTSTRAP_GOALS := release-site-local RELEASE_SITE
+NON_BOOTSTRAP_GOALS := $(filter-out $(BOOTSTRAP_GOALS),$(MAKECMDGOALS))
+
+ifeq ($(strip $(NON_BOOTSTRAP_GOALS)),)
 else
 include $(TOP)/configure/CONFIG
 
@@ -60,3 +63,17 @@ release-site-local:
 	@printf "#==============================================================================\n" >> $(RELEASE_SITE_LOCAL)
 
 # Keep tracked RELEASE_SITE unchanged; use release-site-local explicitly.
+
+# ---------------------------------------------------------------------------
+# Convenience debug build targets
+# ---------------------------------------------------------------------------
+.PHONY: debug debug-clean
+
+# Build with debug-friendly flags and no optimization from EPICS defaults.
+debug:
+	$(MAKE) HOST_OPT=NO CROSS_OPT=NO USR_CFLAGS='-O0 -g3' USR_CXXFLAGS='-O0 -g3'
+
+# Clean + rebuild in debug mode.
+debug-clean:
+	$(MAKE) clean
+	$(MAKE) debug

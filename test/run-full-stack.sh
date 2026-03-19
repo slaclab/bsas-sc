@@ -6,10 +6,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARCH="${ARCH:-linux-aarch64}"
 BIN_DIR="${ROOT_DIR}/bin/${ARCH}"
 BOOT_ROOT="${ROOT_DIR}/test/iocBoot"
+IOC_LAUNCH_SCRIPT="${IOC_LAUNCH_SCRIPT:-${ROOT_DIR}/test/run-test-ioc.sh}"
+IOC_SESSION_PREFIX="${IOC_SESSION_PREFIX:-ioc}"
 WORK_DIR="${WORK_DIR:-${ROOT_DIR}/test/.run}"
 TIMEOUT_SECS="${TIMEOUT_SECS:-60}"
 SETTLE_SECS="${SETTLE_SECS:-5}"
-MERGER_PVLIST="${MERGER_PVLIST:-${WORK_DIR}/merger.pvlist}"
+MERGER_PVLIST="${MERGER_PVLIST:-${ROOT_DIR}/test/merger.pvlist}"
 MERGER_PVNAME="${MERGER_PVNAME:-SIM:MERGED}"
 WRITER_INPUT_PV="${WRITER_INPUT_PV:-${MERGER_PVNAME}}"
 WRITER_BASE_DIRECTORY="${WRITER_BASE_DIRECTORY:-${WORK_DIR}/writer-out}"
@@ -24,13 +26,19 @@ if [[ ! -d "${BIN_DIR}" ]]; then
     exit 1
 fi
 
+if [[ ! -f "${IOC_LAUNCH_SCRIPT}" ]]; then
+    echo "error: missing IOC launcher script: ${IOC_LAUNCH_SCRIPT}" >&2
+    exit 1
+fi
+
 rm -rf "${WORK_DIR}"
 mkdir -p "${WORK_DIR}" "${WRITER_BASE_DIRECTORY}"
 find "${BOOT_ROOT}" -name envPaths -type f -delete
 
-cat > "${MERGER_PVLIST}" <<EOF_PVLIST
-SIM:STAT:0
-EOF_PVLIST
+if [[ ! -f "${MERGER_PVLIST}" ]]; then
+    echo "error: missing merger PV list file: ${MERGER_PVLIST}" >&2
+    exit 1
+fi
 
 pids=()
 cleanup_children() {
@@ -59,26 +67,6 @@ trap on_interrupt INT TERM
 trap on_error ERR
 trap cleanup_children EXIT
 
-start_ioc() {
-    local name="$1"
-    local script_dir="$2"
-    local bin_name="$3"
-    local script="${script_dir}/st.cmd"
-    local bin="${BIN_DIR}/${bin_name}"
-
-    if [[ ! -x "${bin}" ]]; then
-        echo "error: missing executable: ${bin}" >&2
-        exit 1
-    fi
-
-    echo "==> starting ${name}"
-    (
-        cd "${script_dir}"
-        EPICS_PVAS_SERVER_PORT=0 "${bin}" "${script}"
-    ) >"${WORK_DIR}/${name}.log" 2>&1 &
-    pids+=("$!")
-}
-
 start_bg() {
     local name="$1"
     shift
@@ -89,10 +77,8 @@ start_bg() {
     pids+=("$!")
 }
 
-start_ioc "stacker" "${BOOT_ROOT}/ioc-stacker" "stacker"
-start_ioc "sim-scalar" "${BOOT_ROOT}/ioc-sim-scalar" "simulator"
-start_ioc "sim-table-scalar" "${BOOT_ROOT}/ioc-sim-table-scalar" "simulator"
-start_ioc "sim-table-stat" "${BOOT_ROOT}/ioc-sim-table-stat" "simulator"
+echo "==> starting IOC backend via ${IOC_LAUNCH_SCRIPT}"
+ARCH="${ARCH}" SESSION_PREFIX="${IOC_SESSION_PREFIX}" bash "${IOC_LAUNCH_SCRIPT}" >"${WORK_DIR}/ioc-launch.log" 2>&1
 
 sleep "${SETTLE_SECS}"
 

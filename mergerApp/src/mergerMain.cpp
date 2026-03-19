@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <deque>
+#include <stdexcept>
 #include <utility>
 
 #include <epicsEvent.h>
@@ -70,7 +71,7 @@ public:
     virtual ~Runnable() {};
 };
 
-class Listener : public Runnable {
+ class Listener : public Runnable {
 private:
     pvxs::client::Context client_;
     pvxs::MPMCFIFO<std::pair<size_t, std::shared_ptr<pvxs::client::Subscription>>> queue_;
@@ -88,17 +89,32 @@ public:
         // Create subscriptions
         size_t col_idx = 0;
         for (auto pvname : pvlist) {
-            subscriptions_.emplace_back(
-                client_
-                    .monitor(pvname)
-                    .maskConnected(false)
-                    .maskDisconnected(false)
-                    .event([this, col_idx](pvxs::client::Subscription &sub) {
-                        this->queue_.push(std::make_pair(col_idx, sub.shared_from_this()));
-                    })
-                    .exec());
-
+            try {
+                subscriptions_.emplace_back(
+                    client_
+                        .monitor(pvname)
+                        // Work around older pvxs monitor parser which expects record._options.pipeline.
+                        .record("pipeline", false)
+                        .record("queueSize", static_cast<uint32_t>(QUEUE_SIZE))
+                        .record("ackAny", 1u)
+                        .event([this, col_idx](pvxs::client::Subscription &sub) {
+                            this->queue_.push(std::make_pair(col_idx, sub.shared_from_this()));
+                        })
+                        .exec());
+            } catch (const std::exception& e) {
+                log_err_printf(LISTENER_LOG,
+                    "Failed to subscribe to '%s': %s\n",
+                    pvname.c_str(), e.what());
+            } catch (...) {
+                log_err_printf(LISTENER_LOG,
+                    "Failed to subscribe to '%s': unknown exception\n",
+                    pvname.c_str());
+            }
             ++col_idx;
+        }
+
+        if (subscriptions_.empty()) {
+            throw std::runtime_error("Listener failed to subscribe to any PV from --pvlist");
         }
     }
 
@@ -136,6 +152,9 @@ public:
                 log_warn_printf(LISTENER_LOG, "PV disconnected: %s\n", sub->name().c_str());
             } catch (std::exception &e) {
                 log_err_printf(LISTENER_LOG, "Error: %s %s\n", sub->name().c_str(), e.what());
+                break;
+            } catch (...) {
+                log_err_printf(LISTENER_LOG, "Error: %s unknown exception\n", sub->name().c_str());
                 break;
             }
 
@@ -283,8 +302,19 @@ static std::vector<std::string> pvlist_from_file(const std::string & filename) {
     std::string line;
     std::vector<std::string> pvlist;
 
-    while(std::getline(filestream, line))
-        pvlist.push_back(line);
+    while(std::getline(filestream, line)) {
+        auto begin = line.find_first_not_of(" \t\r\n");
+        if (begin == std::string::npos)
+            continue;
+
+        auto end = line.find_last_not_of(" \t\r\n");
+        auto pv = line.substr(begin, end - begin + 1);
+
+        if (pv.empty() || pv[0] == '#')
+            continue;
+
+        pvlist.push_back(pv);
+    }
 
     return pvlist;
 }
@@ -346,51 +376,59 @@ int main (int argc, char *argv[]) {
     VALIDATE_ARG(timeout_sec < 0.0 || (timeout_sec > 0 && timeout_sec < period_sec), "Invalid timeout: %.6f seconds\n", timeout_sec);
     #undef VALIDATE_ARG
 
-    std::vector<std::string> pvlist(pvlist_from_file(pvlist_file));
+    try {
+        std::vector<std::string> pvlist(pvlist_from_file(pvlist_file));
 
-    // Create
-    log_info_printf(LOG, "Starting%s\n", "");
-    log_info_printf(LOG, "  pvlist=%s [%lu PVs]\n", pvlist_file.c_str(), pvlist.size());
-    log_info_printf(LOG, "  period=%.6f s\n", period_sec);
-    log_info_printf(LOG, "  timeout=%.6f s%s\n", timeout_sec, timeout_sec == 0 ? " (wait forever)" : "");
-    log_info_printf(LOG, "  pvname=%s\n", pvname.c_str());
-    log_info_printf(LOG, "  label-sep=%s\n", label_sep.c_str());
-    log_info_printf(LOG, "  column-sep=%s\n", col_sep.c_str());
+        // Create
+        log_info_printf(LOG, "Starting%s\n", "");
+        log_info_printf(LOG, "  pvlist=%s [%lu PVs]\n", pvlist_file.c_str(), pvlist.size());
+        log_info_printf(LOG, "  period=%.6f s\n", period_sec);
+        log_info_printf(LOG, "  timeout=%.6f s%s\n", timeout_sec, timeout_sec == 0 ? " (wait forever)" : "");
+        log_info_printf(LOG, "  pvname=%s\n", pvname.c_str());
+        log_info_printf(LOG, "  label-sep=%s\n", label_sep.c_str());
+        log_info_printf(LOG, "  column-sep=%s\n", col_sep.c_str());
 
-    // Shared objects
-    auto dead_queue = std::make_shared<pvxs::MPMCFIFO<Runnable*>>();
-    auto taligned_table(std::make_shared<TimeAlignedTable>(pvlist, label_sep, col_sep));
-    pvxs::server::SharedPV pv(pvxs::server::SharedPV::buildReadonly());
+        // Shared objects
+        auto dead_queue = std::make_shared<pvxs::MPMCFIFO<Runnable*>>();
+        auto taligned_table(std::make_shared<TimeAlignedTable>(pvlist, label_sep, col_sep));
+        pvxs::server::SharedPV pv(pvxs::server::SharedPV::buildReadonly());
 
-    // Prepare workers
-    Listener listener(dead_queue, pvlist, taligned_table);
-    Reactor reactor(dead_queue, taligned_table, period_sec, timeout_sec, pv);
+        // Prepare workers
+        Listener listener(dead_queue, pvlist, taligned_table);
+        Reactor reactor(dead_queue, taligned_table, period_sec, timeout_sec, pv);
 
-    // Prepare server
-    pvxs::server::Server server(pvxs::server::Config::fromEnv().build());
-    server.addPV(pvname, pv);
+        // Prepare server
+        pvxs::server::Server server(pvxs::server::Config::fromEnv().build());
+        server.addPV(pvname, pv);
 
-    // Run workers and server
-    listener.start();
-    reactor.start();
-    server.start();
+        // Run workers and server
+        listener.start();
+        reactor.start();
+        server.start();
 
-    // Wait for one thread to die
-    // CTRL+C is handled by the Server thread
-    auto dead = dead_queue->pop();
+        // Wait for one thread to die
+        // CTRL+C is handled by the Server thread
+        auto dead = dead_queue->pop();
 
-    // Close the PV, stop the server
-    pv.close();
-    server.stop();
+        // Close the PV, stop the server
+        pv.close();
+        server.stop();
 
-    // Ask other threads to stop, if they are not dead yet
-    if (dynamic_cast<Runnable*>(&listener) != dead)
-        listener.stop(1.0);
+        // Ask other threads to stop, if they are not dead yet
+        if (dynamic_cast<Runnable*>(&listener) != dead)
+            listener.stop(1.0);
 
-    if (dynamic_cast<Runnable*>(&reactor) != dead)
-        reactor.stop(1.0);
+        if (dynamic_cast<Runnable*>(&reactor) != dead)
+            reactor.stop(1.0);
 
-    log_info_printf(LOG, "Exiting%s\n", "");
+        log_info_printf(LOG, "Exiting%s\n", "");
 
-    return 0;
+        return 0;
+    } catch (const std::exception& e) {
+        log_err_printf(LOG, "Fatal startup error: %s\n", e.what());
+        return 2;
+    } catch (...) {
+        log_err_printf(LOG, "Fatal startup error: %s\n", "unknown exception");
+        return 3;
+    }
 }
