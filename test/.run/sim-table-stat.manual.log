@@ -1,5 +1,0 @@
-Starting iocInit
-initPeriodic: Scan rate '100 Hz' is not achievable.
-initPeriodic: Scan rate '1000 Hz' is not achievable.
-terminate called after throwing an instance of 'std::logic_error'
-  what():  No Instance

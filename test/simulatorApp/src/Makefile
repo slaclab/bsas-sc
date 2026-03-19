@@ -6,6 +6,7 @@ PROD_IOC = simulator
 DBD += simulator.dbd
 
 simulator_DBD += base.dbd
+simulator_DBD += pvxsIoc.dbd
 simulator_DBD += menuScan.dbd
 simulator_DBD += simTableSup.dbd
 

@@ -1,2 +1,3 @@
 function(stacker_init)
 function(stacker_proc)
+registrar(stackerPvxsRegistrar)

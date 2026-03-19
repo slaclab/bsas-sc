@@ -6,7 +6,7 @@ PROD_IOC = stacker
 DBD += stacker.dbd
 
 stacker_DBD += base.dbd
-stacker_DBD += PVAServerRegister.dbd
+stacker_DBD += pvxsIoc.dbd
 stacker_DBD += stackerSup.dbd
 
 stacker_SRCS += stackerMain.cpp stackerSup.cpp

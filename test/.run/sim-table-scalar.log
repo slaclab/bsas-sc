@@ -1,0 +1,21 @@
+Starting iocInit
+initPeriodic: Scan rate '100 Hz' is not achievable.
+initPeriodic: Scan rate '1000 Hz' is not achievable.
+cas WARNING: Configured TCP port was unavailable.
+cas WARNING: Using dynamically assigned TCP port 41607,
+cas WARNING: but now two or more servers share the same UDP port.
+cas WARNING: Depending on your IP kernel this server may not be
+cas WARNING: reachable with UDP unicast (a host's IP in EPICS_CA_ADDR_LIST)
+iocRun: All initialization complete
+#!../../bin/linux-x86_64/simulator
+dbLoadDatabase("/workspace/dbd/simulator.dbd",0,0)
+simulator_registerRecordDeviceDriver(pdbbase)
+INFO: PVXS QSRV2 is loaded, permitted, and ENABLED.
+dbLoadRecords("/workspace/db/sim_table.db","P=SIM:,R=TABLE,SCAN=1 second,NUM_TABLES=1,NUM_SIGNALS=2,NUM_SAMPLES=1,CONFIG=0,TIME_STEP_SEC=0.001,NUM_ROWS=5")
+iocInit()
+############################################################################
+## EPICS R7.0.8.1
+## Rev. R7.0.8.1
+## Rev. Date Git: 2024-06-27 20:55:03 -0500
+############################################################################
+epics> 

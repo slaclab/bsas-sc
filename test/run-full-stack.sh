@@ -74,7 +74,7 @@ start_ioc() {
     echo "==> starting ${name}"
     (
         cd "${script_dir}"
-        "${bin}" "${script}"
+        EPICS_PVAS_SERVER_PORT=0 "${bin}" "${script}"
     ) >"${WORK_DIR}/${name}.log" 2>&1 &
     pids+=("$!")
 }
