@@ -2,8 +2,8 @@
 # Run "gnumake clean uninstall install" in the application
 # top directory each time this file is changed.
 
-include $(TOP)/../RELEASE_SITE
--include $(TOP)/../RELEASE_SITE.local
+include ../../../RELEASE_SITE
+-include ../../../RELEASE_SITE.local
 
 IOCADMIN_MODULE_VERSION         = R3.1.16-1.3.2
 AUTOSAVE_MODULE_VERSION         = R5.8-2.1.0
@@ -17,6 +17,6 @@ PVXS      = $(EPICS_MODULES)/pvxs/$(PVXS_MODULE_VERSION)
 
 EPICS_BASE ?= $(EPICS_SITE_TOP)/base/$(BASE_MODULE_VERSION)
 
--include $(TOP)/../RELEASE.local
--include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
--include $(TOP)/configure/RELEASE.local
+-include ../../../RELEASE.local
+-include ../../../RELEASE.$(EPICS_HOST_ARCH).local
+-include ./RELEASE.local

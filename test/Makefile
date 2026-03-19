@@ -3,17 +3,12 @@ TOP = ..
 include $(TOP)/configure/CONFIG
 
 # Directories to build, any order
-DIRS += configure
+# The test subtree does not need its own configure recursion; build the
+# actual app and boot directories directly.
 DIRS += $(wildcard *Sup)
 DIRS += $(wildcard *App)
 DIRS += $(wildcard *Top)
-DIRS += $(wildcard iocBoot)
 
-# The build order is controlled by these dependency rules:
-
-# All dirs except configure depend on configure
-$(foreach dir, $(filter-out configure, $(DIRS)), \
-    $(eval $(dir)_DEPEND_DIRS += configure))
 
 # Any *App dirs depend on all *Sup dirs
 $(foreach dir, $(filter %App, $(DIRS)), \
@@ -26,9 +21,6 @@ $(foreach dir, $(filter %Top, $(DIRS)), \
 # iocBoot depends on all *App dirs
 iocBoot_DEPEND_DIRS += $(filter %App,$(DIRS))
 
-# Add any additional dependency rules here:
-stackerApp_DEPEND_DIRS += ../commonApp
-mergerApp_DEPEND_DIRS  += ../commonApp
 
 USR_CPPFLAGS += -std-c++11
 

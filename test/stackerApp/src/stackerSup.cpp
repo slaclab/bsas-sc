@@ -14,6 +14,7 @@
 #include <pvxs/sharedpv.h>
 #include <pvxs/log.h>
 #include <pvxs/iochooks.h>
+#include <initHooks.h>
 #include <pvxs/nt.h>
 
 #include <tab/nttable.h>
@@ -29,6 +30,33 @@ typedef epicsUInt64 epicsUTag;
 
 
 DEFINE_LOGGER(LOG, "stacker");
+
+namespace {
+struct PendingPV {
+    std::string name;
+    pvxs::server::SharedPV pv;
+};
+
+std::vector<PendingPV> pending_pvs;
+bool hook_registered = false;
+
+void registerPendingPVs(initHookState state) {
+    if(state != initHookAfterCaServerRunning)
+        return;
+
+    for(auto & req : pending_pvs)
+        pvxs::ioc::server().addPV(req.name, req.pv);
+
+    pending_pvs.clear();
+}
+
+void ensurePendingHook() {
+    if(!hook_registered) {
+        initHookRegister(&registerPendingPVs);
+        hook_registered = true;
+    }
+}
+}
 
 using tabulator::nt::NTTable;
 using tabulator::TimeTableScalar;
@@ -64,10 +92,11 @@ struct Stacker {
     :name(name), period_sec(period_sec), type(config),
      pv(pvxs::server::SharedPV::buildReadonly())
     {
-        pvxs::ioc::server().addPV(output_pv_name, pv);
+        pending_pvs.push_back({output_pv_name, pv});
 
         auto initial = type.create();
         pv.open(initial.get());
+        ensurePendingHook();
 
         log_info_printf(LOG, "Stacker[%s]: initialized\n", name);
     }
@@ -243,6 +272,13 @@ static long stacker_proc(aSubRecord *prec) {
 
     return 0;
 }
+
+static void stackerPvxsRegistrar()
+{
+    ensurePendingHook();
+}
+
+epicsExportRegistrar(stackerPvxsRegistrar);
 
 epicsRegisterFunction(stacker_init);
 epicsRegisterFunction(stacker_proc);

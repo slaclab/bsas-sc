@@ -1,1 +1,1 @@
-include ../../configure/CONFIG_SITE
+include ../../../configure/CONFIG_SITE

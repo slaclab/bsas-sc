@@ -8,6 +8,7 @@
 #include <devSup.h>
 #include <epicsVersion.h>
 #include <epicsStdio.h>
+#include <initHooks.h>
 
 #include <vector>
 #include <iostream>
@@ -27,6 +28,33 @@
 #define PI 3.14159265
 
 DEFINE_LOGGER(LOG, "sim");
+
+namespace {
+struct PendingPV {
+    std::string name;
+    pvxs::server::SharedPV pv;
+};
+
+std::vector<PendingPV> pending_pvs;
+bool hook_registered = false;
+
+void registerPendingPVs(initHookState state) {
+    if(state != initHookAfterCaServerRunning)
+        return;
+
+    for(auto & req : pending_pvs)
+        pvxs::ioc::server().addPV(req.name, req.pv);
+
+    pending_pvs.clear();
+}
+
+void ensurePendingHook() {
+    if(!hook_registered) {
+        initHookRegister(&registerPendingPVs);
+        hook_registered = true;
+    }
+}
+}
 
 using tabulator::nt::NTTable;
 using tabulator::TimeTable;
@@ -302,8 +330,9 @@ struct SimTables {
             auto initial = table.type.create();
 
             auto pvname = gen_table_name(output_table_prefix, num_tables, table_idx++);
-            pvxs::ioc::server().addPV(pvname, table.pv);
+            pending_pvs.push_back({pvname, table.pv});
             table.pv.open(initial.get());
+            ensurePendingHook();
         }
 
         epicsTimeGetCurrent(&ts);
@@ -445,6 +474,13 @@ static long sim_proc(aSubRecord *prec) {
 
     return 0;
 }
+
+static void simulatorPvxsRegistrar()
+{
+    ensurePendingHook();
+}
+
+epicsExportRegistrar(simulatorPvxsRegistrar);
 
 epicsRegisterFunction(sim_init);
 epicsRegisterFunction(sim_proc);
