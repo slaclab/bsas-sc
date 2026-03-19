@@ -49,16 +49,92 @@ The resulting directory is named *bsas-sc* by default and contains several entri
 | **mergerApp**/     | Software which acquires data from the EPICS IOCs and makes it available in a single, merged table |
 | **nttableApp**/    | Software which support the NTTable type in EPICS v7, and provides a template for the merged output table's format |
 | README.md          | This file |
-| RELEASE_SITE       | Used by the EPICS system to define site-specific details of the build and operating environments at SLAC. |
+| RELEASE_SITE       | Tracked site baseline for production/shared defaults. |
+| RELEASE_SITE.local.template | Template for machine-local EPICS overrides (copy to `RELEASE_SITE.local`, which is ignored). |
 | **test**/          | Contains several programs capable of testing various aspects of the EPICS environment |
 | **writerApp**/     | Software which reads the merged NTTable from the **mergerApp**, either locally or across a network, and records that data in HDF5 format |
 
 ### Building
 
-From any account having the standard SLAC development environment set, just type **make** to build the software.  The EPICS build system is used to build the software.
+The project uses a tracked production baseline plus optional local override files.
 
-A *bin* directory will be created and software will be installed within an architecture specific subdirectory.  For example, on a Redhat Enterprise 7 machine, software will be installed under *bin/rhel7-x86_64/*.  On a Redhat 6 machine, the software will be placed under *bin/rhel6-x86_64/*.
-A *doc* directory will also be created with documentation installed.
+Configuration precedence (lowest to highest):
+
+1. `RELEASE_SITE` (tracked baseline for production/shared defaults)
+2. `RELEASE_SITE.local` (local root override, ignored by git)
+3. `configure/RELEASE.local` (local EPICS/module override, ignored by git)
+
+Recommended local workflow (dev container and developer machines):
+
+```shell
+# 1) Set EPICS Base for this shell
+export EPICS_BASE=/opt/local
+
+# 2) Generate machine-local root override from environment
+make release-site-local
+
+# 3) (Optional one-time) create configure-local override file
+cp configure/RELEASE.local.template configure/RELEASE.local
+
+# 4) Build
+make configure
+make -j
+```
+
+When `EPICS_BASE` changes:
+
+```shell
+export EPICS_BASE=/new/epics/base/path
+make release-site-local
+make configure
+make -j
+```
+
+Clean rebuild:
+
+```shell
+make clean
+make configure
+make -j
+```
+
+Build output is installed under architecture-specific subdirectories in `bin/` and `lib/`. Documentation is generated under `doc/`.
+
+### Machine-local overrides (optional)
+
+Use local override files to avoid editing tracked production files when switching machines.
+
+```shell
+# One-time setup on a machine
+cp RELEASE_SITE.local.template RELEASE_SITE.local
+cp configure/RELEASE.local.template configure/RELEASE.local
+
+# Edit values for this machine
+# Example:
+#   EPICS_BASE = /opt/local
+```
+
+The `RELEASE_SITE.local` and `configure/RELEASE.local` files are git-ignored and already included by `configure/RELEASE`.
+The template files `RELEASE_SITE.local.template` and `configure/RELEASE.local.template` are tracked in git and can be updated normally.
+
+After creating or editing local overrides, build with:
+
+```shell
+make configure
+make -j
+```
+
+Use `make release-site-local` when you want to regenerate `RELEASE_SITE.local` from the current shell environment. This does not modify tracked `RELEASE_SITE`.
+
+If your site/module paths also change across machines, you can add additional overrides to `configure/RELEASE.local`, for example:
+
+```make
+EPICS_MODULES = /opt/local/modules
+IOCADMIN = $(EPICS_MODULES)/iocAdmin/R3.1.16-1.3.2
+AUTOSAVE = $(EPICS_MODULES)/autosave/R5.8-2.1.0
+CAPUTLOG = $(EPICS_MODULES)/caPutLog/R3.5-1.0.0
+PVXS = $(EPICS_MODULES)/pvxs/R1.2.2-0.2.0
+```
 
 ### Deploying / Publishing
 

@@ -1,0 +1,22 @@
+# RELEASE Location of external products
+# Run "gnumake clean uninstall install" in the application
+# top directory each time this file is changed.
+
+include $(TOP)/../RELEASE_SITE
+-include $(TOP)/../RELEASE_SITE.local
+
+IOCADMIN_MODULE_VERSION         = R3.1.16-1.3.2
+AUTOSAVE_MODULE_VERSION         = R5.8-2.1.0
+CAPUTLOG_MODULE_VERSION         = R3.5-1.0.0
+PVXS_MODULE_VERSION             = R1.2.2-0.2.0
+
+IOCADMIN  = $(EPICS_MODULES)/iocAdmin/$(IOCADMIN_MODULE_VERSION)
+AUTOSAVE  = $(EPICS_MODULES)/autosave/$(AUTOSAVE_MODULE_VERSION)
+CAPUTLOG  = $(EPICS_MODULES)/caPutLog/$(CAPUTLOG_MODULE_VERSION)
+PVXS      = $(EPICS_MODULES)/pvxs/$(PVXS_MODULE_VERSION)
+
+EPICS_BASE ?= $(EPICS_SITE_TOP)/base/$(BASE_MODULE_VERSION)
+
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local

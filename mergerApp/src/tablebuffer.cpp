@@ -1,5 +1,7 @@
 #include "tablebuffer.h"
 
+#include <limits>
+
 #include <epicsStdio.h>
 
 namespace tabulator {

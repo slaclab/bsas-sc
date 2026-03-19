@@ -8,6 +8,7 @@
 # change this easily when relocating software.
 # ==============================================================
 include $(TOP)/RELEASE_SITE
+-include $(TOP)/RELEASE_SITE.local
 
 # =============================================================
 # Define the version of modules needed by
@@ -33,7 +34,9 @@ PVXS      = $(EPICS_MODULES)/pvxs/$(PVXS_MODULE_VERSION)
 # Define EPICS_BASE
 # EPICS_BASE usually appears last so other apps can override stuff:
 # =================================================================
-EPICS_BASE = $(EPICS_SITE_TOP)/base/$(BASE_MODULE_VERSION)
+# EPICS_BASE may be set directly in RELEASE_SITE.local or RELEASE.local.
+# If not set there, fall back to the site/version formula below.
+EPICS_BASE ?= $(EPICS_SITE_TOP)/base/$(BASE_MODULE_VERSION)
 
 -include $(TOP)/../RELEASE.local
 -include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local

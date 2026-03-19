@@ -1,0 +1,16 @@
+# RELEASE.local.template
+#
+# Copy this file to configure/RELEASE.local and edit values for your host.
+# The resulting configure/RELEASE.local file is git-ignored by default.
+#
+# Example:
+#   cp configure/RELEASE.local.template configure/RELEASE.local
+#
+# EPICS Base installation for this machine
+EPICS_BASE = /opt/local
+
+# Optional per-machine overrides can be added below, for example:
+# IOCADMIN = /path/to/iocAdmin
+# AUTOSAVE = /path/to/autosave
+# CAPUTLOG = /path/to/caPutLog
+# PVXS = /path/to/pvxs

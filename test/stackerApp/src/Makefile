@@ -2,7 +2,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_IOC = stacker
+PROD_HOST = stacker
 DBD += stacker.dbd
 
 stacker_DBD += base.dbd stackerSup.dbd pvxsIoc.dbd

@@ -2,7 +2,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
-PROD_IOC = simulator
+PROD_HOST = simulator
 DBD += simulator.dbd
 
 simulator_DBD += base.dbd
