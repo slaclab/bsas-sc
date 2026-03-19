@@ -1,0 +1,9 @@
+CompileFlags:
+  Add:
+    - -I/opt/local/include
+    - -I/opt/local/include/compiler/gcc
+    - -I/opt/local/include/os/Linux
+    - -I/workspace/include
+    - -std=c++17
+    - -D_REENTRANT
+    - -Dlinux
