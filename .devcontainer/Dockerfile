@@ -14,7 +14,7 @@ RUN dnf update -y && \
     dnf install -y dnf-plugins-core epel-release && \
     dnf config-manager --set-enabled crb && \
     dnf install -y rocky-release-hpc && \
-    dnf install -y doxygen cmake git tcl ninja-build protobuf-compiler grpc-plugins grpc-devel gdb openssl-devel cyrus-sasl-devel libcurl-devel libicu-devel jq file sudo clang libevent-devel ca-certificates perl perl-Pod-Html perl-podlators hdf5-devel && \
+    dnf install -y doxygen cmake git tcl ninja-build protobuf-compiler grpc-plugins grpc-devel gdb openssl-devel cyrus-sasl-devel libcurl-devel libicu-devel jq file sudo clang libevent-devel ca-certificates perl perl-Pod-Html perl-podlators hdf5-devel tmux && \
     (dnf install -y go-toolset lcov valgrind clang-tools-extra lldb lld || echo "Warning: optional packages unavailable on this Rocky target; continuing" >&2) && \
     if [ ! -x /usr/bin/go ]; then \
       for p in /usr/lib/golang/bin/go /opt/rh/go-toolset/root/usr/bin/go /usr/local/go/bin/go; do \
@@ -98,7 +98,9 @@ RUN EPICS_ARCH=$(/opt/epics/startup/EpicsHostArch) && \
     fi && \
     echo "$EPICS_ARCH" > /etc/epics_host_arch && \
     printf 'export EPICS_HOST_ARCH=%s\n' "$EPICS_ARCH" >> /etc/profile.d/epics.sh && \
+    printf 'export PATH=/opt/local/bin/%s:$PATH\n' "$EPICS_ARCH" >> /etc/profile.d/epics.sh && \
     printf 'export EPICS_HOST_ARCH=%s\n' "$EPICS_ARCH" >> /etc/bash.bashrc && \
+    printf 'export PATH=/opt/local/bin/%s:$PATH\n' "$EPICS_ARCH" >> /etc/bash.bashrc && \
     printf 'EPICS_HOST_ARCH=%s\n' "$EPICS_ARCH" >> /etc/environment && \
     if [ ! -d /opt/epics/bin/${EPICS_ARCH} ] && [ -d /opt/local/bin/${EPICS_ARCH} ]; then \
         mkdir -p /opt/epics/bin && \
