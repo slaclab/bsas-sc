@@ -8,13 +8,15 @@ BIN_DIR="${ROOT_DIR}/bin/${ARCH}"
 BOOT_ROOT="${ROOT_DIR}/test/iocBoot"
 SESSION_PREFIX="${SESSION_PREFIX:-ioc}"
 
-if [[ ! -d "${BIN_DIR}" ]]; then
-    echo "error: missing binary directory: ${BIN_DIR}" >&2
-    exit 1
-fi
+COMMAND="${1:-start}"
 
 if ! command -v tmux >/dev/null 2>&1; then
     echo "error: tmux is not installed" >&2
+    exit 1
+fi
+
+if [[ "${COMMAND}" == "start" && ! -d "${BIN_DIR}" ]]; then
+    echo "error: missing binary directory: ${BIN_DIR}" >&2
     exit 1
 fi
 
@@ -24,6 +26,22 @@ sanitize_session_name() {
     raw="${raw//:/-}"
     raw="${raw// /-}"
     echo "${raw//[^a-zA-Z0-9._-]/-}"
+}
+
+stop_iocs() {
+    local sessions
+    mapfile -t sessions < <(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep "^${SESSION_PREFIX}-" || true)
+
+    if [[ ${#sessions[@]} -eq 0 ]]; then
+        echo "no active IOC sessions found (prefix: ${SESSION_PREFIX}-)"
+        return 0
+    fi
+
+    for session in "${sessions[@]}"; do
+        echo "==> stopping tmux session '${session}'"
+        tmux kill-session -t "${session}"
+    done
+    echo "all IOC sessions stopped"
 }
 
 start_ioc_tmux() {
@@ -54,12 +72,23 @@ start_ioc_tmux() {
         "EPICS_PVAS_SERVER_PORT=0 \"${bin}\" \"${script}\""
 }
 
-start_ioc_tmux "stacker" "${BOOT_ROOT}/ioc-stacker" "stacker"
-start_ioc_tmux "simulator-scalar" "${BOOT_ROOT}/ioc-sim-scalar" "simulator"
-start_ioc_tmux "simulator-table-scalar" "${BOOT_ROOT}/ioc-sim-table-scalar" "simulator"
-start_ioc_tmux "simulator-table-stat" "${BOOT_ROOT}/ioc-sim-table-stat" "simulator"
-
-echo "all IOCs started in tmux sessions"
-echo "active sessions (prefix: ${SESSION_PREFIX}-):"
-tmux list-sessions 2>/dev/null | grep "^${SESSION_PREFIX}-" || true
-echo "attach example: tmux attach -t ${SESSION_PREFIX}-simulator-table-stat"
+case "${COMMAND}" in
+    start)
+        start_ioc_tmux "stacker" "${BOOT_ROOT}/ioc-stacker" "stacker"
+        start_ioc_tmux "simulator-scalar" "${BOOT_ROOT}/ioc-sim-scalar" "simulator"
+        start_ioc_tmux "simulator-table-scalar" "${BOOT_ROOT}/ioc-sim-table-scalar" "simulator"
+        start_ioc_tmux "simulator-table-stat" "${BOOT_ROOT}/ioc-sim-table-stat" "simulator"
+        echo "all IOCs started in tmux sessions"
+        echo "active sessions (prefix: ${SESSION_PREFIX}-):"
+        tmux list-sessions 2>/dev/null | grep "^${SESSION_PREFIX}-" || true
+        echo "attach example: tmux attach -t ${SESSION_PREFIX}-simulator-table-stat"
+        ;;
+    stop)
+        stop_iocs
+        ;;
+    *)
+        echo "error: unknown command '${COMMAND}'" >&2
+        echo "usage: $(basename "$0") [start|stop]" >&2
+        exit 1
+        ;;
+esac

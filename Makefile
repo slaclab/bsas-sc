@@ -5,8 +5,11 @@ TOP = .
 BOOTSTRAP_GOALS := release-site-local RELEASE_SITE
 NON_BOOTSTRAP_GOALS := $(filter-out $(BOOTSTRAP_GOALS),$(MAKECMDGOALS))
 
-ifeq ($(strip $(NON_BOOTSTRAP_GOALS)),)
-else
+# Skip EPICS config only when the user explicitly requested bootstrap goals
+# and nothing else.  An empty MAKECMDGOALS means the default (full) build.
+BOOTSTRAP_ONLY := $(if $(MAKECMDGOALS),$(if $(NON_BOOTSTRAP_GOALS),,yes),)
+
+ifneq ($(BOOTSTRAP_ONLY),yes)
 include $(TOP)/configure/CONFIG
 
 DIRS += configure
