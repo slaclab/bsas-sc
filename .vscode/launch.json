@@ -20,8 +20,8 @@
       "cwd": "${workspaceFolder}",
       "environment": [
         {
-          "name": "PVXS_LOG",
-          "value": "info"
+            "name": "PVXS_LOG",
+            "value": "merger*=INFO"
         }
       ],
       "stopAtEntry": false,
@@ -46,7 +46,7 @@
         "--input-pv",
         "SIM:MERGED",
         "--base-directory",
-        "${workspaceFolder}/test/.run/writer-out",
+        "${workspaceFolder}/test/run/writer-out",
         "--file-prefix",
         "bsas",
         "--root-group",
@@ -58,7 +58,7 @@
       "environment": [
         {
           "name": "PVXS_LOG",
-          "value": "info"
+          "value": "merger*=INFO"
         }
       ],
       "stopAtEntry": false,

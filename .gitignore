@@ -19,3 +19,4 @@ envPaths
 dllPath.bat
 .memory
 bin/
+test/run

@@ -199,7 +199,7 @@ public:
         epicsTimeGetCurrent(&start_ts);
         epicsTimeGetCurrent(&now_ts);
 
-        log_info_printf(REACTOR_LOG, "Waiting until all PVs have at least one update%s\n", "");
+        log_debug_printf(REACTOR_LOG, "Waiting until all PVs have at least one update%s\n", "");
 
         while (running_ && (timeout_ == 0 || epicsTimeDiffInSeconds(&now_ts, &start_ts) < timeout_) && !taligned_table_->initialized()) {
             epicsThreadSleep(sleepPeriod);
@@ -280,7 +280,7 @@ public:
             TimeStamp end = start;
             epicsTimeAddSeconds(&end.ts, period_);
 
-            log_info_printf(REACTOR_LOG, "Extracting merged table spanning %.3f sec: %u.%u -- %u.%u\n",
+            log_debug_printf(REACTOR_LOG, "Extracting merged table spanning %.3f sec: %u.%u -- %u.%u\n",
                 epicsTimeDiffInSeconds(&end.ts, &start.ts), start.ts.secPastEpoch, start.ts.nsec,
                 end.ts.secPastEpoch, end.ts.nsec);
 

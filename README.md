@@ -182,3 +182,43 @@ The system can acquire data from several IOCs, gathered to one server then trans
 
 The **mergerApp**, **writerApp** and **managerApp** can be configured by editing a simple ascii file.
 More details can be found in the **BSAS-SC Users Manual** located in the *doc* directory.
+
+## Writer HDF5 File Structure
+
+The writer stores each output file with two top-level groups:
+
+- `/data` contains time-series datasets and grouped signal data.
+- `/meta` contains lookup arrays describing PV names, labels, columns, and data types.
+
+Inside `/data`, the writer creates an additional group named by the `--root-group` argument.
+In test runs this is often `data`, which gives the path `/data/data`.
+
+Example structure:
+
+```text
+/
+|-- data/
+|   `-- <root-group>/
+|       |-- secondsPastEpoch
+|       |-- nanoseconds
+|       |-- pulseId
+|       |-- tbl0/
+|       |-- tbl0_pv0/
+|       |-- tbl0_pv1/
+|       |-- tbl1/
+|       |-- tbl1_pv0/
+|       `-- ...
+`-- meta/
+	|-- pvnames
+	|-- column_prefixes
+	|-- columns
+	|-- labels
+	`-- pvxs_types
+```
+
+Notes:
+
+- `secondsPastEpoch`, `nanoseconds`, and `pulseId` are extendable datasets aligned row-by-row with all signal data.
+- Group names like `tbl0`, `tbl1`, `tbl0_pv0`, `tbl1_pv1`, etc. depend on incoming column prefixes from the merged NTTable.
+- `meta/pvnames` and `meta/column_prefixes` map PV names to column-prefix groups.
+- `meta/columns`, `meta/labels`, and `meta/pvxs_types` describe each written column in order.
