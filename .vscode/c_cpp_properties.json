@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/include",
+                "${workspaceFolder}/highfiveApp/HighFive/include",
                 "/opt/local/include",
                 "/opt/local/include/compiler/gcc",
                 "/opt/local/include/os/Linux",

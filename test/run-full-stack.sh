@@ -21,6 +21,7 @@ WRITER_ROOT_GROUP="${WRITER_ROOT_GROUP:-data}"
 WRITER_TIMEOUT_SEC="${WRITER_TIMEOUT_SEC:-2}"
 MERGER_PERIOD_SEC="${MERGER_PERIOD_SEC:-1}"
 MERGER_TIMEOUT_SEC="${MERGER_TIMEOUT_SEC:-0}"
+PVXS_LOG="${PVXS_LOG:-merger*=INFO}"
 COMMAND="${1:-start}"
 
 if [[ ! -d "${BIN_DIR}" ]]; then
@@ -102,7 +103,7 @@ start_all() {
     sleep "${SETTLE_SECS}"
 
     start_app_tmux "merger" "merger" env \
-        PVXS_LOG="${PVXS_LOG:-info}" \
+        PVXS_LOG="${PVXS_LOG}" \
         "${BIN_DIR}/merger" \
         --pvlist "${MERGER_PVLIST}" \
         --period-sec "${MERGER_PERIOD_SEC}" \
@@ -112,7 +113,7 @@ start_all() {
     sleep "${SETTLE_SECS}"
 
     start_app_tmux "writer" "writer" env \
-        PVXS_LOG="${PVXS_LOG:-info}" \
+        PVXS_LOG="${PVXS_LOG}" \
         "${BIN_DIR}/writer" \
         --input-pv "${WRITER_INPUT_PV}" \
         --base-directory "${WRITER_BASE_DIRECTORY}" \

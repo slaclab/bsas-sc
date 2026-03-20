@@ -1,9 +1,17 @@
 CompileFlags:
   Add:
+    - -I.
+    - -I..
+    - -I../..
     - -I/opt/local/include
     - -I/opt/local/include/compiler/gcc
     - -I/opt/local/include/os/Linux
+    - -Iinclude
+    - -I../../include
     - -I/workspace/include
+    - -IhighfiveApp/HighFive/include
+    - -I../../highfiveApp/HighFive/include
+    - -I/workspace/highfiveApp/HighFive/include
     - -std=c++17
     - -D_REENTRANT
     - -Dlinux

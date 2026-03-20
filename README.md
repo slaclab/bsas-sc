@@ -91,14 +91,25 @@ make -j
 
 Build output is installed under architecture-specific subdirectories in `bin/` and `lib/`. Documentation is generated under `doc/`.
 
-### Running Test IOCs
+### Running Test Scripts
 
-The helper script `test/run-test-ioc.sh` starts each test IOC in its own `tmux` session so processes stay alive after the launching shell exits.
+The `test` directory includes two helper scripts:
+
+- `test/run-test-ioc.sh` manages only the backend test IOCs in `tmux`.
+- `test/run-full-stack.sh` manages the full local test stack (IOCs + merger + writer) in `tmux`.
+
+#### IOC-Only Script
 
 Start all test IOCs:
 
 ```shell
-bash test/run-test-ioc.sh
+bash test/run-test-ioc.sh start
+```
+
+Stop all test IOCs:
+
+```shell
+bash test/run-test-ioc.sh stop
 ```
 
 List running IOC sessions:
@@ -114,6 +125,35 @@ tmux attach -t ioc-simulator-table-stat
 ```
 
 Detach without stopping the IOC: press `Ctrl+b`, then `d`.
+
+#### Full-Stack Script
+
+Start the full stack and keep it running (default behavior):
+
+```shell
+bash test/run-full-stack.sh
+```
+
+Equivalent explicit start command:
+
+```shell
+bash test/run-full-stack.sh start
+```
+
+Start, run for `TIMEOUT_SECS`, then stop automatically:
+
+```shell
+bash test/run-full-stack.sh start-stop
+```
+
+Stop merger/writer tmux sessions and stop backend IOCs:
+
+```shell
+bash test/run-full-stack.sh stop
+```
+
+The script writes runtime logs under `test/run` and writer output files under `test/run/writer-out`.
+You can override defaults through environment variables such as `ARCH`, `IOC_SESSION_PREFIX`, `APP_SESSION_PREFIX`, `WORK_DIR`, `TIMEOUT_SECS`, `PVXS_LOG`, `MERGER_PVNAME`, and `WRITER_TIMEOUT_SEC`.
 
 Protocol notes for reading PVs:
 
