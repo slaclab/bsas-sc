@@ -1,7 +1,5 @@
 #include "writer.h"
 
-#include <exception>
-#include <iostream>
 #include <set>
 #include <vector>
 
