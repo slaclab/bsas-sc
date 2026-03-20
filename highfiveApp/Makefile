@@ -1,6 +1,9 @@
 TOP=..
 
-include $(TOP)/configure/CONFIG
+# Bootstrap-only targets must be runnable even when EPICS is not configured.
+BOOTSTRAP_GOALS := ensure_highfive_submodule
+NON_BOOTSTRAP_GOALS := $(filter-out $(BOOTSTRAP_GOALS),$(MAKECMDGOALS))
+BOOTSTRAP_ONLY := $(if $(MAKECMDGOALS),$(if $(NON_BOOTSTRAP_GOALS),,yes),)
 
 HIGHFIVE_SUBMODULE_PATH := $(TOP)/highfiveApp/HighFive
 HIGHFIVE_SENTINEL := $(HIGHFIVE_SUBMODULE_PATH)/include/highfive/H5File.hpp
@@ -16,6 +19,9 @@ HIGHFIVE_SUBMODULE_BOOTSTRAP := $(shell git -C "$(TOP)" submodule update --init 
 endif
 endif
 
+ifneq ($(BOOTSTRAP_ONLY),yes)
+include $(TOP)/configure/CONFIG
+
 # Keep synced with upstream/fork header changes without hand-maintaining lists.
 INC += $(wildcard HighFive/include/highfive/*.hpp)
 INC += $(wildcard HighFive/include/highfive/bits/*.hpp)
@@ -29,6 +35,7 @@ inc: ensure_highfive_submodule
 install: ensure_highfive_submodule
 
 $(INC): ensure_highfive_submodule
+endif
 
 .PHONY: ensure_highfive_submodule
 ensure_highfive_submodule:
@@ -36,3 +43,4 @@ ensure_highfive_submodule:
 		echo "HighFive submodule not found. Initializing non-recursively (Catch2 is not fetched)..."; \
 		git -C "$(TOP)" submodule update --init highfiveApp/HighFive; \
 	fi
+
