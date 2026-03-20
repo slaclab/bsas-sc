@@ -1,18 +1,9 @@
-<html lang="en">
-<div id="pagehead">
-    <a href="https://www.slac.stanford.edu/">
-        <img alt="SLAC logo" src="https://www.slac.stanford.edu/grp/ad/model/images/SLAC-lab-hires.png" width="283"/>      
-    </a>
-</div>
-
-<hr/>
+![logo](./documentation/SLAC-lab-hires.png)
 
 # Beam Synchronous Acquisition Service
     
 Doug Murray, SLAC, May 2022<br />
 Revision 1.0, 04-May-2022, Initial Version.
-
-<hr />
 
 BSAS is the **Beam Synchronous Acquisition Service**, which acquires data synchronized with each beam pulse from devices in SLAC's LCLS Accelerator, and records it in files using the Hierarchical Data Format (HDF).
 
