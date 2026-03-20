@@ -10,7 +10,7 @@ IOC_LAUNCH_SCRIPT="${IOC_LAUNCH_SCRIPT:-${ROOT_DIR}/test/run-test-ioc.sh}"
 IOC_SESSION_PREFIX="${IOC_SESSION_PREFIX:-ioc}"
 APP_SESSION_PREFIX="${APP_SESSION_PREFIX:-stack}"
 WORK_DIR="${WORK_DIR:-${ROOT_DIR}/test/run}"
-TIMEOUT_SECS="${TIMEOUT_SECS:-60}"
+TIMEOUT_SECS="${TIMEOUT_SECS:-10}"
 SETTLE_SECS="${SETTLE_SECS:-5}"
 MERGER_PVLIST="${MERGER_PVLIST:-${ROOT_DIR}/test/merger.pvlist}"
 MERGER_PVNAME="${MERGER_PVNAME:-SIM:MERGED}"
@@ -19,9 +19,8 @@ WRITER_BASE_DIRECTORY="${WRITER_BASE_DIRECTORY:-${WORK_DIR}/writer-out}"
 WRITER_FILE_PREFIX="${WRITER_FILE_PREFIX:-bsas}"
 WRITER_ROOT_GROUP="${WRITER_ROOT_GROUP:-data}"
 WRITER_TIMEOUT_SEC="${WRITER_TIMEOUT_SEC:-2}"
-VERIFIER_SNAPSHOT_FILE="${VERIFIER_SNAPSHOT_FILE:-${WORK_DIR}/verifier-snapshot.h5}"
+VERIFIER_SNAPSHOT_FILE="${VERIFIER_SNAPSHOT_FILE:-${WORK_DIR}/verifier-snapshot.jsonl}"
 VERIFIER_INPUT_PV="${VERIFIER_INPUT_PV:-${MERGER_PVNAME}}"
-VERIFIER_LABEL_SEP="${VERIFIER_LABEL_SEP:-.}"
 VERIFIER_COLUMN_SEP="${VERIFIER_COLUMN_SEP:-_}"
 VERIFIER_TIMEOUT_SEC="${VERIFIER_TIMEOUT_SEC:-30}"
 MERGER_PERIOD_SEC="${MERGER_PERIOD_SEC:-1}"
@@ -94,9 +93,6 @@ start_verifier_capture() {
         --mode capture \
         --input-pv "${VERIFIER_INPUT_PV}" \
         --snapshot-file "${VERIFIER_SNAPSHOT_FILE}" \
-        --root-group "${WRITER_ROOT_GROUP}" \
-        --label-sep "${VERIFIER_LABEL_SEP}" \
-        --column-sep "${VERIFIER_COLUMN_SEP}" \
         --timeout-sec "${VERIFIER_TIMEOUT_SEC}"
 }
 
@@ -108,13 +104,23 @@ run_verifier_verify() {
         --snapshot-file "${VERIFIER_SNAPSHOT_FILE}" \
         --base-directory "${WRITER_BASE_DIRECTORY}" \
         --file-prefix "${WRITER_FILE_PREFIX}" \
-        --root-group "${WRITER_ROOT_GROUP}" \
         --column-sep "${VERIFIER_COLUMN_SEP}"
 }
 
 stop_all() {
     stop_app_tmux "writer"
     stop_app_tmux "merger"
+    echo "==> stopping IOC backend via ${IOC_LAUNCH_SCRIPT}"
+    ARCH="${ARCH}" SESSION_PREFIX="${IOC_SESSION_PREFIX}" bash "${IOC_LAUNCH_SCRIPT}" stop >>"${WORK_DIR}/ioc-launch.log" 2>&1 || true
+}
+
+stop_for_verifier() {
+    # Freeze source updates first, then stop writer/verifier so both consume
+    # the same final stream window before comparison.
+    stop_app_tmux "merger"
+    sleep "${SETTLE_SECS}"
+    stop_app_tmux "writer"
+    stop_app_tmux "verifier"
     echo "==> stopping IOC backend via ${IOC_LAUNCH_SCRIPT}"
     ARCH="${ARCH}" SESSION_PREFIX="${IOC_SESSION_PREFIX}" bash "${IOC_LAUNCH_SCRIPT}" stop >>"${WORK_DIR}/ioc-launch.log" 2>&1 || true
 }
@@ -165,13 +171,15 @@ case "${COMMAND}" in
         start_writer
         echo "full stack started successfully"
         ;;
-    start-stop)
+    verifier|start-stop)
+        if [[ "${COMMAND}" == "start-stop" ]]; then
+            echo "warning: 'start-stop' is deprecated, use 'verifier'" >&2
+        fi
         start_all
         start_verifier_capture
         start_writer
         sleep "${TIMEOUT_SECS}"
-        stop_all
-        stop_app_tmux "verifier"
+        stop_for_verifier
         run_verifier_verify
         echo "full stack start-stop completed"
         ;;
@@ -182,7 +190,7 @@ case "${COMMAND}" in
         ;;
     *)
         echo "error: unknown command '${COMMAND}'" >&2
-        echo "usage: $(basename "$0") [start|start-stop|stop]" >&2
+        echo "usage: $(basename "$0") [start|verifier|stop]" >&2
         exit 1
         ;;
 esac

@@ -19,4 +19,5 @@ envPaths
 dllPath.bat
 .memory
 bin/
-test/run
+test/run/*
+PROCESS_LOG*

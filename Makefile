@@ -2,7 +2,9 @@
 TOP = .
 
 # Bootstrap targets must run before EPICS build configuration is loaded.
-BOOTSTRAP_GOALS := release-site-local RELEASE_SITE
+# Keep `configure` here so `make configure` can generate RELEASE_SITE.local
+# before loading EPICS build rules.
+BOOTSTRAP_GOALS := release-site-local RELEASE_SITE configure
 NON_BOOTSTRAP_GOALS := $(filter-out $(BOOTSTRAP_GOALS),$(MAKECMDGOALS))
 
 # Skip EPICS config only when the user explicitly requested bootstrap goals
@@ -45,6 +47,12 @@ endif
 # Dynamic RELEASE_SITE.local generation (machine-local override)
 # ---------------------------------------------------------------------------
 RELEASE_SITE_LOCAL := RELEASE_SITE.local
+RELEASE_LOCAL := configure/RELEASE.local
+
+
+.PHONY: configure
+configure: release-site-local
+	$(MAKE) -C configure
 
 
 .PHONY: release-site-local
@@ -63,7 +71,25 @@ release-site-local:
 	@printf "PSPKG_ROOT=%s\n" "$(PSPKG_ROOT)" >> $(RELEASE_SITE_LOCAL)
 	@printf "TOOLS_SITE_TOP=%s/tools\n" "$(EPICS_BASE)" >> $(RELEASE_SITE_LOCAL)
 	@printf "ALARM_CONFIGS_TOP=%s/tools/AlarmConfigsTop\n" "$(EPICS_BASE)" >> $(RELEASE_SITE_LOCAL)
+	@pvxs_path="$(PVXS)"; \
+	if [ -n "$$pvxs_path" ] && [ ! -f "$$pvxs_path/dbd/pvxsIoc.dbd" ]; then pvxs_path=""; fi; \
+	if [ -z "$$pvxs_path" ] && [ -f /opt/pvxs/dbd/pvxsIoc.dbd ]; then pvxs_path="/opt/pvxs"; fi; \
+	if [ -z "$$pvxs_path" ] && [ -n "$(PVXS_BASE)" ] && [ -f "$(PVXS_BASE)/dbd/pvxsIoc.dbd" ]; then pvxs_path="$(PVXS_BASE)"; fi; \
+	if [ -n "$$pvxs_path" ]; then \
+	  printf "PVXS=%s\n" "$$pvxs_path" >> $(RELEASE_SITE_LOCAL); \
+	fi
 	@printf "#==============================================================================\n" >> $(RELEASE_SITE_LOCAL)
+	@echo "Generating $(RELEASE_LOCAL) PVXS override..."
+	@pvxs_path="$(PVXS)"; \
+	if [ -n "$$pvxs_path" ] && [ ! -f "$$pvxs_path/dbd/pvxsIoc.dbd" ]; then pvxs_path=""; fi; \
+	if [ -z "$$pvxs_path" ] && [ -f /opt/pvxs/dbd/pvxsIoc.dbd ]; then pvxs_path="/opt/pvxs"; fi; \
+	if [ -z "$$pvxs_path" ] && [ -n "$(PVXS_BASE)" ] && [ -f "$(PVXS_BASE)/dbd/pvxsIoc.dbd" ]; then pvxs_path="$(PVXS_BASE)"; fi; \
+	printf "# Auto-generated local overrides\n" > $(RELEASE_LOCAL); \
+	if [ -n "$$pvxs_path" ]; then \
+	  printf "PVXS=%s\n" "$$pvxs_path" >> $(RELEASE_LOCAL); \
+	else \
+	  printf "# PVXS=/path/to/pvxs\n" >> $(RELEASE_LOCAL); \
+	fi
 
 # Keep tracked RELEASE_SITE unchanged; use release-site-local explicitly.
 
