@@ -1,0 +1,77 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug merger (rebuild)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/linux-aarch64/merger",
+      "preLaunchTask": "Build merger (debug)",
+      "args": [
+        "--pvlist",
+        "${workspaceFolder}/test/merger.pvlist",
+        "--period-sec",
+        "1",
+        "--timeout-sec",
+        "0",
+        "--pvname",
+        "SIM:MERGED"
+      ],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "PVXS_LOG",
+          "value": "info"
+        }
+      ],
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "Debug writer (rebuild)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/linux-aarch64/writer",
+      "preLaunchTask": "Build writer (debug)",
+      "args": [
+        "--input-pv",
+        "SIM:MERGED",
+        "--base-directory",
+        "${workspaceFolder}/test/.run/writer-out",
+        "--file-prefix",
+        "bsas",
+        "--root-group",
+        "data",
+        "--timeout-sec",
+        "2"
+      ],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "PVXS_LOG",
+          "value": "info"
+        }
+      ],
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}

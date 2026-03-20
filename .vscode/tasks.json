@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build merger (debug)",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "release-site-local",
+        "mergerApp",
+        "HOST_OPT=NO",
+        "CROSS_OPT=NO",
+        "USR_CFLAGS=-O0 -g3",
+        "USR_CXXFLAGS=-O0 -g3"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build writer (debug)",
+      "type": "shell",
+      "command": "make",
+      "args": [
+        "release-site-local",
+        "writerApp",
+        "HOST_OPT=NO",
+        "CROSS_OPT=NO",
+        "USR_CFLAGS=-O0 -g3",
+        "USR_CXXFLAGS=-O0 -g3"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
