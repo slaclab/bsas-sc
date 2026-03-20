@@ -19,6 +19,11 @@ WRITER_BASE_DIRECTORY="${WRITER_BASE_DIRECTORY:-${WORK_DIR}/writer-out}"
 WRITER_FILE_PREFIX="${WRITER_FILE_PREFIX:-bsas}"
 WRITER_ROOT_GROUP="${WRITER_ROOT_GROUP:-data}"
 WRITER_TIMEOUT_SEC="${WRITER_TIMEOUT_SEC:-2}"
+VERIFIER_SNAPSHOT_FILE="${VERIFIER_SNAPSHOT_FILE:-${WORK_DIR}/verifier-snapshot.h5}"
+VERIFIER_INPUT_PV="${VERIFIER_INPUT_PV:-${MERGER_PVNAME}}"
+VERIFIER_LABEL_SEP="${VERIFIER_LABEL_SEP:-.}"
+VERIFIER_COLUMN_SEP="${VERIFIER_COLUMN_SEP:-_}"
+VERIFIER_TIMEOUT_SEC="${VERIFIER_TIMEOUT_SEC:-30}"
 MERGER_PERIOD_SEC="${MERGER_PERIOD_SEC:-1}"
 MERGER_TIMEOUT_SEC="${MERGER_TIMEOUT_SEC:-0}"
 PVXS_LOG="${PVXS_LOG:-merger*=INFO}"
@@ -82,6 +87,31 @@ start_app_tmux() {
         "$(printf '%q ' "$@") >$(printf '%q' "${log_path}") 2>&1"
 }
 
+start_verifier_capture() {
+    start_app_tmux "verifier" "verifier-capture" env \
+        PVXS_LOG="${PVXS_LOG}" \
+        "${BIN_DIR}/verifier" \
+        --mode capture \
+        --input-pv "${VERIFIER_INPUT_PV}" \
+        --snapshot-file "${VERIFIER_SNAPSHOT_FILE}" \
+        --root-group "${WRITER_ROOT_GROUP}" \
+        --label-sep "${VERIFIER_LABEL_SEP}" \
+        --column-sep "${VERIFIER_COLUMN_SEP}" \
+        --timeout-sec "${VERIFIER_TIMEOUT_SEC}"
+}
+
+run_verifier_verify() {
+    env \
+        PVXS_LOG="${PVXS_LOG}" \
+        "${BIN_DIR}/verifier" \
+        --mode verify \
+        --snapshot-file "${VERIFIER_SNAPSHOT_FILE}" \
+        --base-directory "${WRITER_BASE_DIRECTORY}" \
+        --file-prefix "${WRITER_FILE_PREFIX}" \
+        --root-group "${WRITER_ROOT_GROUP}" \
+        --column-sep "${VERIFIER_COLUMN_SEP}"
+}
+
 stop_all() {
     stop_app_tmux "writer"
     stop_app_tmux "merger"
@@ -112,6 +142,13 @@ start_all() {
 
     sleep "${SETTLE_SECS}"
 
+    echo "logs: ${WORK_DIR}"
+    echo "artifacts: ${WRITER_BASE_DIRECTORY}"
+    echo "active app sessions:"
+    tmux list-sessions 2>/dev/null | grep "^$(session_name '')" || true
+}
+
+start_writer() {
     start_app_tmux "writer" "writer" env \
         PVXS_LOG="${PVXS_LOG}" \
         "${BIN_DIR}/writer" \
@@ -120,22 +157,22 @@ start_all() {
         --file-prefix "${WRITER_FILE_PREFIX}" \
         --root-group "${WRITER_ROOT_GROUP}" \
         --timeout-sec "${WRITER_TIMEOUT_SEC}"
-
-    echo "logs: ${WORK_DIR}"
-    echo "artifacts: ${WRITER_BASE_DIRECTORY}"
-    echo "active app sessions:"
-    tmux list-sessions 2>/dev/null | grep "^$(session_name '')" || true
 }
 
 case "${COMMAND}" in
     start)
         start_all
+        start_writer
         echo "full stack started successfully"
         ;;
     start-stop)
         start_all
+        start_verifier_capture
+        start_writer
         sleep "${TIMEOUT_SECS}"
         stop_all
+        stop_app_tmux "verifier"
+        run_verifier_verify
         echo "full stack start-stop completed"
         ;;
     stop)
