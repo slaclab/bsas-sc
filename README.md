@@ -91,6 +91,44 @@ make -j
 
 Build output is installed under architecture-specific subdirectories in `bin/` and `lib/`. Documentation is generated under `doc/`.
 
+### Building and Running with Singularity
+
+If you use a Singularity image, bind-mount the project directory into the container instead of copying source files into the image.
+
+Build the image from this repository root:
+
+```shell
+singularity build container/singularity/bsas-sc.sif container/singularity/Singularity
+```
+
+Open an interactive shell with the project mounted at `/work`:
+
+```shell
+singularity shell -B "$(pwd):/work" container/singularity/bsas-sc.sif
+```
+
+Inside the container:
+
+```shell
+cd /work
+export EPICS_BASE=/opt/epics/base
+make release-site-local
+make configure
+make -j
+```
+
+Single-command build from host shell:
+
+```shell
+singularity exec -B "$(pwd):/work" container/singularity/bsas-sc.sif bash -lc 'cd /work && export EPICS_BASE=/opt/epics/base && make release-site-local && make configure && make -j'
+```
+
+Notes:
+
+- Keep your source tree on the host and mount it with `-B` for normal development.
+- Rebuilding the image should only be needed when dependencies or toolchain contents change.
+- A helper script is available as `./container/singularity/singularity.sh`.
+
 ### Running Test Scripts
 
 The `test` directory includes two helper scripts:

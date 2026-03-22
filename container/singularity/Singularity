@@ -1,0 +1,140 @@
+Bootstrap: docker
+From: rockylinux:9
+
+%labels
+    Author "Claudio Bisegni"
+    Version "1.0"
+    Description "Singularity container for BSAS-SC EPICS application"
+
+%help
+    Singularity container for building and running the Beam Synchronous 
+    Acquisition Service (BSAS-SC) application.
+    
+    Usage:
+        # Build the image
+        singularity build container/singularity/bsas-sc.sif container/singularity/Singularity
+        
+        # Run build inside container
+        singularity exec -B "$(pwd):/work" container/singularity/bsas-sc.sif bash -c "cd /work && make configure && make -j"
+        
+        # Run with shell access
+        singularity shell -B "$(pwd):/work" container/singularity/bsas-sc.sif
+
+%environment
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export PATH=/opt/epics/base/bin/linux-aarch64:$PATH
+    export LD_LIBRARY_PATH=/opt/epics/base/lib/linux-aarch64:$LD_LIBRARY_PATH
+
+%post
+    # Update system packages
+    dnf update -y
+    
+    # Install required build tools
+    dnf install -y \
+        gcc \
+        gcc-c++ \
+        make \
+        automake \
+        autoconf \
+        git \
+        wget \
+        curl \
+        tar \
+        gzip \
+        bzip2 \
+        patch \
+        perl \
+        readline-devel \
+        ncurses-devel \
+        openssl-devel \
+        zlib-devel
+    
+    # Install Python and tools for manager app
+    dnf install -y \
+        python3 \
+        python3-devel \
+        python3-pip
+    
+    # Install HDF5 development libraries
+    dnf install -y \
+        hdf5 \
+        hdf5-devel
+    
+    # Install additional scientific/development packages
+    dnf install -y \
+        cmake \
+        ninja-build \
+        pkg-config \
+        libxml2-devel \
+        libicu-devel
+    
+    # Create installation directory structure
+    mkdir -p /opt/epics
+    mkdir -p /work
+    
+    # Download and build EPICS Base 7.0.3.1
+    cd /tmp
+    wget -q https://github.com/epics-base/epics-base/archive/R7.0.3.1.tar.gz
+    tar -xzf R7.0.3.1.tar.gz
+    cd epics-base-R7.0.3.1
+    
+    # Configure EPICS for linux-aarch64 (or linux-x86_64 as appropriate)
+    ./configure --prefix=/opt/epics/base
+    make -j $(nproc)
+    make install
+    
+    cd /
+    rm -rf /tmp/epics-base-R7.0.3.1 /tmp/R7.0.3.1.tar.gz
+    
+    # Install EPICS modules
+    mkdir -p /opt/epics/modules
+    
+    # Install iocAdmin module
+    cd /tmp
+    git clone --depth 1 --branch R3.1.16-1.3.2 https://github.com/epics-modules/iocAdmin.git
+    cd iocAdmin
+    export EPICS_BASE=/opt/epics/base
+    export EPICS_HOST_ARCH=linux-aarch64
+    make
+    make INSTALL_LOCATION=/opt/epics/modules/iocAdmin/R3.1.16-1.3.2 install
+    cd / && rm -rf /tmp/iocAdmin
+    
+    # Install autosave module
+    cd /tmp
+    git clone --depth 1 --branch R5.8-2.1.0 https://github.com/epics-modules/autosave.git
+    cd autosave
+    make
+    make INSTALL_LOCATION=/opt/epics/modules/autosave/R5.8-2.1.0 install
+    cd / && rm -rf /tmp/autosave
+    
+    # Install caPutLog module
+    cd /tmp
+    git clone --depth 1 --branch R3.5-1.0.0 https://github.com/epics-modules/caPutLog.git
+    cd caPutLog
+    make
+    make INSTALL_LOCATION=/opt/epics/modules/caPutLog/R3.5-1.0.0 install
+    cd / && rm -rf /tmp/caPutLog
+    
+    # Install PVXS module
+    cd /tmp
+    git clone --depth 1 --branch R1.2.2-0.2.0 https://github.com/mdavidsaver/pvxs.git
+    cd pvxs
+    make
+    make INSTALL_LOCATION=/opt/epics/modules/pvxs/R1.2.2-0.2.0 install
+    cd / && rm -rf /tmp/pvxs
+    
+    # Clean up DNF cache
+    dnf clean all
+    rm -rf /var/cache/dnf
+
+%runscript
+    exec "$@"
+
+%startscript
+    echo "BSAS-SC environment loaded"
+    echo "Available commands:"
+    echo "  - cd /work && make configure && make -j    # Build the project"
+    echo "  - cd test && ./run-test.sh                  # Run tests"
+    echo ""
+    exec /bin/bash
