@@ -2,6 +2,8 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+USR_INCLUDES += -I$(TOP)/commonApp
+
 PROD = merger
 
 merger_LIBS += pvxs Com
@@ -14,4 +16,3 @@ merger_SYS_LIBS += event event_pthreads
 merger_SRCS += mergerMain.cpp tablebuffer.cpp taligntable.cpp
 
 include $(TOP)/configure/RULES
-
