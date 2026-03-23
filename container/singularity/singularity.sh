@@ -50,6 +50,14 @@ print_warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
+detect_epics_host_arch() {
+    case "$(uname -m)" in
+        x86_64) echo "linux-x86_64" ;;
+        aarch64) echo "linux-aarch64" ;;
+        *) echo "linux-x86_64" ;;
+    esac
+}
+
 check_singularity() {
     if ! command -v singularity &> /dev/null; then
         print_error "Singularity is not installed."
@@ -90,6 +98,28 @@ run_exec() {
         print_error "Image not found: ${IMAGE_PATH}"
         print_info "Run: $0 build"
         exit 1
+    fi
+
+    if [ $# -eq 0 ]; then
+        print_error "No command provided."
+        print_info "Usage: $0 exec <command> [args]"
+        exit 1
+    fi
+
+    # If user passes a hardcoded /work/bin/linux-*/ path, map to the host arch.
+    local cmd="$1"
+    local host_arch
+    host_arch="$(detect_epics_host_arch)"
+    if [[ "$cmd" == /work/bin/linux-*/* ]]; then
+        local rel
+        rel="${cmd#/work/}"
+        local host_rel
+        host_rel="${rel/linux-*/$host_arch}"
+        if [ -e "${ROOT_DIR}/${host_rel}" ]; then
+            print_warn "Adjusted binary path to host arch: /work/${host_rel}"
+            shift
+            set -- "/work/${host_rel}" "$@"
+        fi
     fi
     
     print_info "Executing: $@"

@@ -63,17 +63,17 @@ singularity exec -B $(pwd):/work container/singularity/bsas-sc.sif bash -c \
 # Now you're inside the container
 cd /work
 export EPICS_BASE=/opt/epics/base
-./bin/linux-aarch64/merger
+./bin/${EPICS_HOST_ARCH}/merger
 ```
 
 ### Run Commands Directly
 
 ```bash
 # Merger application
-./container/singularity/singularity.sh exec /work/bin/linux-aarch64/merger
+./container/singularity/singularity.sh exec /work/bin/${EPICS_HOST_ARCH}/merger
 
 # Writer application
-./container/singularity/singularity.sh exec /work/bin/linux-aarch64/writer
+./container/singularity/singularity.sh exec /work/bin/${EPICS_HOST_ARCH}/writer
 
 # Manager application
 ./container/singularity/singularity.sh exec python3 /work/managerApp/bsasManager.py
