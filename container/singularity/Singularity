@@ -56,8 +56,9 @@ From: rockylinux:9
         python3-devel \
         python3-pip
     
-    # Enable EPEL for HDF5 and other scientific packages
+    # Enable EPEL and CRB (CodeReady Builder) for HDF5, ninja-build, and other packages
     dnf install -y epel-release
+    dnf config-manager --enable crb
 
     # Install HDF5 development libraries
     dnf install -y \
