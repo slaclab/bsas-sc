@@ -23,7 +23,13 @@ From: rockylinux:9
 %environment
     export LANG=C.UTF-8
     export LC_ALL=C.UTF-8
-    export EPICS_HOST_ARCH=$(perl /opt/epics/base/startup/EpicsHostArch.pl)
+    if [ "$(uname -m)" = "x86_64" ]; then
+        export EPICS_HOST_ARCH=linux-x86_64
+    elif [ "$(uname -m)" = "aarch64" ]; then
+        export EPICS_HOST_ARCH=linux-aarch64
+    else
+        export EPICS_HOST_ARCH=linux-x86_64
+    fi
     export PATH=/opt/epics/base/bin/${EPICS_HOST_ARCH}:$PATH
     export LD_LIBRARY_PATH=/opt/epics/base/lib/${EPICS_HOST_ARCH}:$LD_LIBRARY_PATH
 
@@ -84,28 +90,34 @@ From: rockylinux:9
     # Create installation directory structure
     mkdir -p /opt/epics
     mkdir -p /work
+
+    if [ "$(uname -m)" = "x86_64" ]; then
+        export EPICS_HOST_ARCH=linux-x86_64
+    elif [ "$(uname -m)" = "aarch64" ]; then
+        export EPICS_HOST_ARCH=linux-aarch64
+    else
+        export EPICS_HOST_ARCH=linux-x86_64
+    fi
     
     # Clone and build EPICS Base 7.0.3.1 from SLAC fork
-    cd /tmp
-    git clone --depth 1 --branch R7.0.3.1 --recursive https://github.com/slac-epics/epics-base.git
-    cd epics-base
+    rm -rf /opt/epics/base
+    git clone --depth 1 --branch R7.0.3.1 --recursive https://github.com/slac-epics/epics-base.git /opt/epics/base
+    cd /opt/epics/base
     
     # Build EPICS base (uses Makefile, not autoconf)
-    make -j $(nproc) INSTALL_LOCATION=/opt/epics/base
+    make -j $(nproc)
 
     # Some SLAC module RELEASE files expect legacy absolute paths.
     ln -sfn /opt/epics/base /base
     ln -sfn /opt/epics/modules /modules
     
     cd /
-    rm -rf /tmp/epics-base
     
     # Install EPICS modules (SLAC forks with SLAC-specific version tags)
     mkdir -p /opt/epics/modules
     export GIT_TERMINAL_PROMPT=0
     
     # Install PVXS module (host arch only; disable cross-compile targets)
-    export EPICS_HOST_ARCH=$(perl /opt/epics/base/startup/EpicsHostArch.pl)
     export EPICS_BASE=/opt/epics/base
     cd /tmp
     rm -rf /tmp/pvxs
@@ -113,7 +125,12 @@ From: rockylinux:9
     cd pvxs
     git submodule update --init --recursive
     # Override SLAC site path macros so EPICS_BASE resolves correctly
-    echo "EPICS_BASE=/opt/epics/base" > configure/RELEASE.local
+    {
+        echo "EPICS_BASE=/opt/epics/base"
+        echo "EPICS_SITE_TOP=/opt/epics"
+        echo "BASE_MODULE_VERSION=base"
+        echo "EPICS_HOST_ARCH=${EPICS_HOST_ARCH}"
+    } > configure/RELEASE.local
     make CROSS_COMPILER_TARGET_ARCHS=""
     make CROSS_COMPILER_TARGET_ARCHS="" INSTALL_LOCATION=/opt/epics/modules/pvxs/R1.2.2-0.2.0 install
     cd / && rm -rf /tmp/pvxs
