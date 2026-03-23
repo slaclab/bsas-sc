@@ -72,6 +72,12 @@ From: rockylinux:9
         pkg-config \
         libxml2-devel \
         libicu-devel
+
+    # Compatibility shim for builds that expect site-packaged cmake paths.
+    mkdir -p /cmake/3.12.2/linux-x86_64/bin
+    mkdir -p /cmake/3.12.2/linux-aarch64/bin
+    ln -sfn /usr/bin/cmake /cmake/3.12.2/linux-x86_64/bin/cmake
+    ln -sfn /usr/bin/cmake /cmake/3.12.2/linux-aarch64/bin/cmake
     
     # Create installation directory structure
     mkdir -p /opt/epics
