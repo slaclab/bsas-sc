@@ -84,6 +84,10 @@ From: rockylinux:9
     
     # Build EPICS base (uses Makefile, not autoconf)
     make -j $(nproc) INSTALL_LOCATION=/opt/epics/base
+
+    # Some SLAC module RELEASE files expect legacy absolute paths.
+    ln -sfn /opt/epics/base /base
+    ln -sfn /opt/epics/modules /modules
     
     cd /
     rm -rf /tmp/epics-base
