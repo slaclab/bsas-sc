@@ -83,10 +83,8 @@ From: rockylinux:9
     tar -xzf R7.0.3.1.tar.gz
     cd epics-base-R7.0.3.1
     
-    # Configure EPICS for linux-aarch64 (or linux-x86_64 as appropriate)
-    ./configure --prefix=/opt/epics/base
-    make -j $(nproc)
-    make install
+    # Build EPICS base (uses Makefile, not autoconf)
+    make -j $(nproc) INSTALL_LOCATION=/opt/epics/base
     
     cd /
     rm -rf /tmp/epics-base-R7.0.3.1 /tmp/R7.0.3.1.tar.gz
