@@ -56,6 +56,9 @@ From: rockylinux:9
         python3-devel \
         python3-pip
     
+    # Enable EPEL for HDF5 and other scientific packages
+    dnf install -y epel-release
+
     # Install HDF5 development libraries
     dnf install -y \
         hdf5 \
