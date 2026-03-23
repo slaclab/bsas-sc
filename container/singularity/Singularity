@@ -112,6 +112,8 @@ From: rockylinux:9
     git clone --depth 1 --branch R1.2.2-0.2.0 --recursive https://github.com/slac-epics/pvxs.git
     cd pvxs
     git submodule update --init --recursive
+    # Override SLAC site path macros so EPICS_BASE resolves correctly
+    echo "EPICS_BASE=/opt/epics/base" > configure/RELEASE.local
     make CROSS_COMPILER_TARGET_ARCHS=""
     make CROSS_COMPILER_TARGET_ARCHS="" INSTALL_LOCATION=/opt/epics/modules/pvxs/R1.2.2-0.2.0 install
     cd / && rm -rf /tmp/pvxs
