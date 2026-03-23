@@ -6,6 +6,7 @@ include $(TOP)/configure/CONFIG
 # Path to "NON EPICS" External PACKAGES: USER INCLUDES
 # =====================================================
 USR_INCLUDES += $(shell pkg-config --cflags hdf5 2>/dev/null)
+USR_INCLUDES += -I$(PVXS)/include
 USR_INCLUDES += -I$(TOP)/commonApp
 USR_INCLUDES += -I$(TOP)/highfiveApp/HighFive/include
 USR_INCLUDES += -I$(HDF5_INCLUDE)/hdf5/serial

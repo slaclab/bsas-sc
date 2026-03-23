@@ -2,6 +2,7 @@ TOP=../..
 
 include $(TOP)/configure/CONFIG
 
+USR_INCLUDES += -I$(PVXS)/include
 USR_INCLUDES += -I$(TOP)/commonApp
 
 PROD = merger
