@@ -99,8 +99,9 @@ From: rockylinux:9
     # Install PVXS module
     cd /tmp
     rm -rf /tmp/pvxs
-    git clone --depth 1 --branch R1.2.2-0.2.0 https://github.com/slac-epics/pvxs.git
+    git clone --depth 1 --branch R1.2.2-0.2.0 --recursive https://github.com/slac-epics/pvxs.git
     cd pvxs
+    git submodule update --init --recursive
     make
     make INSTALL_LOCATION=/opt/epics/modules/pvxs/R1.2.2-0.2.0 install
     cd / && rm -rf /tmp/pvxs
