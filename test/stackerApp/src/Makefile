@@ -2,6 +2,10 @@ TOP=../../..
 
 include $(TOP)/configure/CONFIG
 
+USR_INCLUDES += -I$(PVXS)/include
+USR_INCLUDES += -I$(TOP)/commonApp
+USR_INCLUDES += -I$(TOP)/nttableApp
+
 PROD_IOC = stacker
 DBD += stacker.dbd
 

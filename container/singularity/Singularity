@@ -30,6 +30,9 @@ From: rockylinux:9
     else
         export EPICS_HOST_ARCH=linux-x86_64
     fi
+    export EPICS_BASE=/opt/epics/base
+    export EPICS_MODULES=/opt/epics/modules
+    export PVXS=/opt/epics/modules/pvxs/R1.2.2-0.2.0
     export PATH=/opt/epics/base/bin/${EPICS_HOST_ARCH}:$PATH
     export LD_LIBRARY_PATH=/opt/epics/base/lib/${EPICS_HOST_ARCH}:$LD_LIBRARY_PATH
 
