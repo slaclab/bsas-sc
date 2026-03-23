@@ -37,11 +37,8 @@ From: rockylinux:9
     export LD_LIBRARY_PATH=/opt/epics/base/lib/${EPICS_HOST_ARCH}:$LD_LIBRARY_PATH
 
 %post
-    # Update system packages
-    dnf update -y
-    
     # Install required build tools
-    dnf install -y --allowerasing \
+    dnf -y --refresh install --allowerasing \
         gcc \
         gcc-c++ \
         make \
@@ -61,22 +58,22 @@ From: rockylinux:9
         zlib-devel
     
     # Install Python and tools for manager app
-    dnf install -y \
+    dnf -y --refresh install \
         python3 \
         python3-devel \
         python3-pip
     
     # Enable EPEL and CRB (CodeReady Builder) for HDF5, ninja-build, and other packages
-    dnf install -y epel-release
+    dnf -y --refresh install epel-release
     dnf config-manager --enable crb
 
     # Install HDF5 development libraries
-    dnf install -y \
+    dnf -y --refresh install \
         hdf5 \
         hdf5-devel
     
     # Install additional scientific/development packages
-    dnf install -y \
+    dnf -y --refresh install \
         cmake \
         ninja-build \
         pkg-config \
