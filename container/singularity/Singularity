@@ -31,7 +31,7 @@ From: rockylinux:9
     dnf update -y
     
     # Install required build tools
-    dnf install -y \
+    dnf install -y --allowerasing \
         gcc \
         gcc-c++ \
         make \
