@@ -21,7 +21,7 @@ This software is typically installed on a supported Linux system at SLAC, such a
 Download the files to start development work.  Use **git** to retrieve the source code and documentation:
 
 ```shell
-git clone --recursive https://github.com/drm-slac/bsas-sc.git
+git clone --recursive https://github.com/slaclab/bsas-sc.git
 ```
 
 This will retrieve the software with standard EPICS directories already configured for use at SLAC.  The *recursive* flag is required because the HDF template library is included as a submodule.
