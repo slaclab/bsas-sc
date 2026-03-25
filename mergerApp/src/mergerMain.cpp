@@ -1,4 +1,3 @@
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -33,7 +32,6 @@ using tabulator::TimeAlignedTable;
 using tabulator::TimeBounds;
 using tabulator::TimeSpan;
 using tabulator::TimeStamp;
-using tabulator::nt::NTTable;
 
 static const size_t QUEUE_SIZE = 1024u;
 
