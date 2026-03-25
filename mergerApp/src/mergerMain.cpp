@@ -78,6 +78,7 @@ private:
   pvxs::MPMCFIFO<std::pair<size_t, std::shared_ptr<pvxs::client::Subscription>>>
       queue_;
   std::vector<std::shared_ptr<pvxs::client::Subscription>> subscriptions_;
+  std::vector<std::shared_ptr<pvxs::client::Connect>> connections_;
   std::shared_ptr<TimeAlignedTable> taligned_table_;
 
 public:
@@ -91,6 +92,17 @@ public:
     size_t col_idx = 0;
     for (auto pvname : pvlist) {
       try {
+        connections_.emplace_back(
+            client_.connect(pvname)
+                .onConnect([this, pvname]() {
+                  log_info_printf(LISTENER_LOG, "PV connected: %s\n",
+                                  pvname.c_str());
+                })
+                .onDisconnect([this, pvname]() {
+                  log_warn_printf(LISTENER_LOG, "PV disconnected: %s\n",
+                                  pvname.c_str());
+                })
+                .exec());
         subscriptions_.emplace_back(
             client_
                 .monitor(pvname)
@@ -99,6 +111,8 @@ public:
                 .record("pipeline", false)
                 .record("queueSize", static_cast<uint32_t>(QUEUE_SIZE))
                 .record("ackAny", 1u)
+                .maskConnected(true)
+                .maskDisconnected(true)
                 .event([this, col_idx](pvxs::client::Subscription &sub) {
                   this->queue_.push(
                       std::make_pair(col_idx, sub.shared_from_this()));
